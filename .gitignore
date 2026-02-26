@@ -10,3 +10,4 @@ wheels/
 .venv
 .env
 MCP_CLIENT_FIX_SUMMARY.md
+MCP_TEST_RESULTS.txt

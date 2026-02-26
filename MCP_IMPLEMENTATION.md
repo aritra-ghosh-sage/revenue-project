@@ -124,24 +124,6 @@ uvicorn api.allocation_metrics:app --port 8001 --reload
 python -m mcp_servers.allocation_usage_mcp
 ```
 
-**Configure for Claude Desktop** (`.config/Claude/claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "api-usage": {
-      "command": "python",
-      "args": ["-m", "mcp_servers.api_usage_mcp"],
-      "cwd": "/path/to/revenue-project"
-    },
-    "allocation-usage": {
-      "command": "python",
-      "args": ["-m", "mcp_servers.allocation_usage_mcp"],
-      "cwd": "/path/to/revenue-project"
-    }
-  }
-}
-```
-
 ### 5. **Features** ✅
 
 **API Usage MCP Server:**
@@ -247,14 +229,12 @@ See [END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md) for detai
 **API Usage Server:**
 1. Start FastAPI: `uvicorn api.metrics:app --reload`
 2. Start MCP server: `python -m mcp_servers.api_usage_mcp`
-3. Configure your MCP client (e.g., Claude Desktop) to connect
-4. Use the tools to query usage data interactively
+3. Use the tools to query usage data interactively
 
 **Allocation Usage Server:**
 1. Start Allocation FastAPI: `uvicorn api.allocation_metrics:app --port 8001 --reload`
 2. Start Allocation MCP server: `python -m mcp_servers.allocation_usage_mcp`
-3. Configure your MCP client (e.g., Claude Desktop) to connect
-4. Use the tool to query allocation SKU records for billing
+3. Use the tool to query allocation SKU records for billing
 
 ## Architecture Diagram
 
@@ -262,7 +242,7 @@ See [END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md) for detai
 ```
 ┌─────────────────────────────────────────┐
 │        MCP Client                       │
-│  (test scripts / Claude Desktop)        │
+│  (test scripts)        │
 └──────────────┬──────────────────────────┘
                │ MCP Protocol (JSON-RPC)
                │ Via Stdio
@@ -295,7 +275,7 @@ See [END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md) for detai
 ```
 ┌─────────────────────────────────────────┐
 │        MCP Client                       │
-│  (test scripts / Claude Desktop)        │
+│  (test scripts)        │
 └──────────────┬──────────────────────────┘
                │ MCP Protocol (JSON-RPC)
                │ Via Stdio
