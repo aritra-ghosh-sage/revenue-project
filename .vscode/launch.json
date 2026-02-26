@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: MCP Client",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mcp_clients/api_usage_mcp_client.py",
+            "args": ["c:/projects/revenue-project/mcp_servers/api_usage_mcp.py"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python Debugger: MCP Client (uv run)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "python",
+            "args": [
+                "run",
+                "mcp_clients/api_usage_mcp_clients.py",
+                "c:/projects/revenue-project/mcp_servers/api_usage_mcp.py"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

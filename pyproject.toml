@@ -1,0 +1,23 @@
+[project]
+name = "revenue-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.129.1",
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.26.0",
+    "openai>=2.23.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.2",
+]
