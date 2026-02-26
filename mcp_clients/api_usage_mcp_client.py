@@ -102,7 +102,7 @@ class MCPClient:
             
             try:
                 response = await self.client.chat.completions.create(
-                    messages=messages,
+                    messages=messages, # pyright: ignore[reportArgumentType]
                     temperature=0.3,
                     top_p=0.1,
                     max_tokens=4096,
@@ -122,12 +122,12 @@ class MCPClient:
             # If the model wants to call tools, execute them
             if finish_reason == "tool_calls" and message.tool_calls:
                 # Add the assistant's response (with tool calls) to messages
-                messages.append({"role": "assistant", "content": message.content or "", "tool_calls": message.tool_calls})
+                messages.append({"role": "assistant", "content": message.content or "", "tool_calls": message.tool_calls}) # pyright: ignore[reportArgumentType]
                 
                 # Execute each tool call and collect results
                 for tool_call in message.tool_calls:
-                    tool_name = tool_call.function.name
-                    tool_args = json.loads(tool_call.function.arguments)
+                    tool_name = tool_call.function.name # pyright: ignore[reportAttributeAccessIssue]
+                    tool_args = json.loads(tool_call.function.arguments) # pyright: ignore[reportAttributeAccessIssue]
                     
                     try:
                         # Call the MCP tool
@@ -138,7 +138,7 @@ class MCPClient:
                         if result.content:
                             for content in result.content:
                                 if hasattr(content, 'text'):
-                                    tool_result_text = content.text
+                                    tool_result_text = content.text # pyright: ignore[reportAttributeAccessIssue]
                         
                         # Add tool result message (Using correct format for OpenAI)
                         # Each tool call result needs its own "tool" message
