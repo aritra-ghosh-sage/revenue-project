@@ -251,16 +251,16 @@ See [END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md) for detai
 
 The system includes 10 sample accounts with real usage data for January 2026:
 
-- Curis Services (VAR, Intelitec Solutions)
-- Sun Meridian Management (Direct)
-- FusionSite Services, LLC (Direct)
-- Tide Health Group LLC (Direct)
-- McCarthy Management Group (VAR, Baker Tilly Advisory Group)
-- Signature Dental Partners (Direct)
-- Bellair (Direct)
-- Generations Healthcare (Direct)
-- CCHS (Direct)
-- Essential Services Holdings (VAR, Baker Tilly Advisory Group)
+- Acme Corporation (Direct, Allied Solutions Group)
+- Zenith Solutions Group (Direct, Tech Partners Inc)
+- Apex Financial Services (TSA)
+- Momentum Healthcare Systems (Direct, Global Advisory Partners)
+- Riverstone Consulting (TSA)
+- Prism Dental Solutions (Direct, Strategic Innovations Ltd)
+- Nexus Enterprises (TSA)
+- Catalyst Medical Group (TSA)
+- Sterling Services LLC (Direct, Enterprise Partners)
+- Horizon Holdings Corp (TSA)
 
 ## License
 
