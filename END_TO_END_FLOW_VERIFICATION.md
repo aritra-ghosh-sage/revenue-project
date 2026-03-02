@@ -70,30 +70,32 @@
 
 ## Test Results Summary
 
-### ✅ Core Flow Tests (test_direct_mcp_flow.py)
+The repository includes several test scripts to verify MCP flows and FastAPI endpoints. Rather than embed static pass/fail counts here (they depend on local runtime and environment), run the tests locally using the commands below to verify functionality in your environment.
 
-| Test | Tool | Input | Records | Status |
-|------|------|-------|---------|--------|
-| 1 | get_usage_by_period | January 2026 | 10 | ✅ PASS |
-| 2 | get_usage_by_contract | C20506 | 1 | ✅ PASS |
-| 3 | get_usage_by_company | C1922 | 1 | ✅ PASS |
-| 4 | get_usage_by_channel | Direct | 7 | ✅ PASS |
-| 5 | get_usage_by_partner | Intelitec Solutions | 1 | ✅ PASS |
+Available test scripts:
 
-### ✅ Extended Coverage Tests (test_additional_queries.py)
+- `test_all_mcp_flows.py` — Runner for MCP flow verification (invokes allocation checks)
+- `test_allocation_mcp_flow.py` — Allocation MCP server end-to-end tests
+- `test_bill_generation_mcp.py` — Tests `generate_bill` via the MCP server
+- `test_mcp_query.py` — Unit tests for MCP query behaviour
+- `test_metrics.py` — FastAPI endpoint tests
+- `test_comprehensive_bills.py` — Additional bill-generation scenarios
+- `test_bill_generation_error.py` — Error case tests for bill generation
 
-| Test | Tool | Input | Records | Status |
-|------|------|-------|---------|--------|
-| 1 | get_usage_by_account_name | Curis | 1 | ✅ PASS |
-| 2 | get_usage_by_account_owner | Monica Lopez | 1 | ✅ PASS |
-| 3 | get_usage_by_api_usage | 224796 | 1 | ✅ PASS |
-| 4 | get_usage_by_apa_over | 7462 | 1 | ✅ PASS |
-| 5 | get_usage_by_das_usage | 3927566 | 1 | ✅ PASS |
+Run tests (example):
 
-**Total Tests:** 10  
-**Passed:** 10  
-**Failed:** 0  
-**Success Rate:** 100%
+```powershell
+# Start FastAPI servers first
+uv run uvicorn api.metrics:app --reload
+uv run uvicorn api.allocation_metrics:app --port 8001 --reload
+
+# In a new terminal, run the test runner
+uv run python test_all_mcp_flows.py
+
+# Run specific tests
+uv run python test_allocation_mcp_flow.py
+uv run python test_bill_generation_mcp.py
+```
 
 ---
 

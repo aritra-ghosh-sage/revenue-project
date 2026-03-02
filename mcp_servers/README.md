@@ -5,7 +5,7 @@ This is a Model Context Protocol (MCP) server that provides tools to query API u
 ## Features
 
 - **Async-first design**: All tools are implemented as async functions using `asyncio.to_thread()` for non-blocking operations
-- **Comprehensive filtering**: 18 different query tools covering all aspects of usage data
+- **Comprehensive filtering**: 18 query tools for usage queries, plus a `generate_bill` PDF generation tool (total: 19 tools)
 - **Stdio transport**: Uses standard input/output for local MCP communication
 - **JSON serialization**: Returns clean JSON-formatted results with Decimal support
 
@@ -13,6 +13,9 @@ This is a Model Context Protocol (MCP) server that provides tools to query API u
 
 ### Period and Time-based Queries
 - `get_usage_by_period(period)` - Get usage data for a specific billing period (e.g., "January 2026")
+
+### Bill generation
+- `generate_bill(bills)` - Generate up to 4 PDF bills from a list of usage records. Each bill entry must include `tenant`, `period`, and `usage_details`.
 
 ### Account and Organization Queries
 - `get_usage_by_contract(contract_id)` - Filter by contract ID (e.g., "C20506")
@@ -53,6 +56,8 @@ python -m mcp_servers.api_usage_mcp
 ```
 
 This will start the server listening on stdin/stdout for MCP protocol messages.
+
+Note: The MCP `generate_bill` tool calls the FastAPI `/generate-bill` endpoint. Ensure the FastAPI server (`api.metrics:app`) is running on port 8000 before invoking `generate_bill`.
 
 ### Configuration in client (e.g., Claude Desktop)
 

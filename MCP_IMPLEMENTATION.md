@@ -38,7 +38,7 @@ MCP Client ←→ MCP Server ←→ FastAPI Server ←→ Data Model
 - Proper JSON serialization with Decimal support
 
 ### 3. **Tools Implemented** ✅
-**18 comprehensive tools** covering all usage data queries:
+**19 tools**: 18 query tools covering usage data plus one `generate_bill` PDF generation tool.
 
 #### Time-based
 - `get_usage_by_period(period)` - Query by billing period
@@ -102,14 +102,14 @@ python -m mcp_servers.api_usage_mcp
 
 **Step 3: Run tests:**
 ```bash
-# Test direct MCP tool calls
-uv run python test_direct_mcp_flow.py
+# Run the comprehensive MCP flow runner (checks allocation flows)
+uv run python test_all_mcp_flows.py
 
-# Test additional query coverage
-uv run python test_additional_queries.py
+# Run allocation MCP flow tests
+uv run python test_allocation_mcp_flow.py
 
-# Verify MCP server structure
-python test_mcp_server.py
+# Run bill generation MCP test
+uv run python test_bill_generation_mcp.py
 ```
 
 **Allocation Usage Server:**
@@ -189,9 +189,12 @@ Response:
 2. **[mcp_servers/allocation_usage_mcp.py](mcp_servers/allocation_usage_mcp.py)** - Allocation Usage MCP server (1 tool)
 3. **[api/metrics.py](api/metrics.py)** - FastAPI backend for usage data (300 lines, port 8000)
 4. **[api/allocation_metrics.py](api/allocation_metrics.py)** - FastAPI backend for allocation data (port 8001)
-5. **[test_direct_mcp_flow.py](test_direct_mcp_flow.py)** - End-to-end flow tests
-6. **[test_additional_queries.py](test_additional_queries.py)** - Extended coverage tests
-7. **[END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md)** - Complete verification report
+5. **[test_all_mcp_flows.py](test_all_mcp_flows.py)** - Runner for MCP flow tests
+6. **[test_allocation_mcp_flow.py](test_allocation_mcp_flow.py)** - Allocation usage MCP end-to-end tests
+7. **[test_bill_generation_mcp.py](test_bill_generation_mcp.py)** - Bill generation via MCP tests
+8. **[test_mcp_query.py](test_mcp_query.py)** - Query-level tests
+9. **[test_metrics.py](test_metrics.py)** - FastAPI endpoint tests
+10. **[END_TO_END_FLOW_VERIFICATION.md](END_TO_END_FLOW_VERIFICATION.md)** - Complete verification report
 
 ## Dependencies
 
@@ -203,7 +206,7 @@ Installed via `uv sync`:
 
 ## Verification ✅
 
-**Test Results:** 10/10 tests passed (100% success rate)
+**Test Results:** A collection of end-to-end and unit tests are included in the repository. Run the scripts above locally to verify your environment; test pass/fail results are environment-dependent and are not asserted here.
 
 ```
 ✅ FastAPI Server: Running on port 8000
