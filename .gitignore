@@ -19,3 +19,4 @@ test_allocation_mcp_flow.py
 test_bill_generation_error.py
 test_bill_generation_mcp.py
 BILL_GENERATION_FIX.md
+BILL_GENERATION_QUERY_FIX.md

@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from decimal import Decimal
 from api.models import UsageData
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from reportlab.lib.pagesizes import letter
@@ -84,12 +84,8 @@ async def _generate_pdf_async(tenant: str, period: str, usage_details: dict, pdf
     summary="Generate up to 4 PDF bills for tenants",
     response_model=List[str],
 )
-async def generate_bill(
-    request: BillRequest, background_tasks: BackgroundTasks
-) -> List[str]:
+async def generate_bill(request: BillRequest) -> List[str]:
     """Generate up to 4 PDF bills for tenants. Returns file paths. Bills are not deleted after generation."""
-    from fastapi import HTTPException
-    
     try:
         bills = request.bills[:4]  # Enforce max 4 bills
         pdf_paths = []

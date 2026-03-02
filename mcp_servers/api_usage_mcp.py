@@ -8,6 +8,9 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Field
 
 # Add parent directory to path to import api module
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -22,18 +25,85 @@ mcp = FastMCP("api-usage-server")
 BASE_URL = "http://localhost:8000"
 
 
+class BillUsageRecord(BaseModel):
+    """A single bill record with tenant name, billing period, and usage details."""
+    tenant: str = Field(..., description="Tenant or account name (e.g., 'Baker Tilly Advisory Group')")
+    period: str = Field(..., description="Billing period (e.g., '2026-01' or 'January 2026')")
+    usage_details: Dict[str, Any] = Field(
+        ..., 
+        description="Usage details as key-value pairs. Example: {'API Calls': 1200, 'Storage (GB)': 50, 'Estimated Dollars': 123.45}"
+    )
+
+
 @mcp.tool(
     name="generate_bill",
     description="Generate up to 4 PDF bills for tenants and return file paths to the generated PDFs.",
 )
-async def generate_bill(bills: list) -> str:
-    """Generate up to 4 PDF bills for tenants. Returns file paths to the generated PDFs.\n\nArgs:\n    bills: List of up to 4 bill records, each a dict with keys:\n        - tenant (str): Tenant name\n        - period (str): Billing period (e.g., '2026-01')\n        - usage_details (dict): Usage details for the tenant (service names as keys, usage/amounts as values)\n\nReturns:\n    JSON string containing a list of file paths to the generated PDFs or error message\n\nExample:\n    generate_bill([\n        {"tenant": "AcmeCorp", "period": "2026-01", "usage_details": {"API Calls": 1200, "Storage (GB)": 50, "Overage": 10, "Estimated Dollars": 123.45}},\n        {"tenant": "BetaInc", "period": "2026-01", "usage_details": {"API Calls": 800, "Storage (GB)": 30, "Overage": 0, "Estimated Dollars": 99.99}}\n    ])\n    # Returns: ['bills/bill_AcmeCorp_xxxxxxxx.pdf', 'bills/bill_BetaInc_xxxxxxxx.pdf']"""
+async def generate_bill(bills: List[BillUsageRecord]) -> str:
+    """Generate up to 4 PDF bills for tenants. Returns file paths to the generated PDFs.
+    
+    Args:
+        bills: List of up to 4 bill records, each with:
+            - tenant (str): Tenant or account name
+            - period (str): Billing period (e.g., '2026-01' or 'January 2026')
+            - usage_details (dict): Usage metrics with keys like 'API Calls', 'Storage (GB)', 'Estimated Dollars', etc.
+    
+    Returns:
+        JSON string containing a list of file paths to the generated PDF bills or error message.
+        Success example: ['bills/bill_Baker_Tilly_Advisory_Group_xxxxxxxx.pdf']
+        Error example: {"error": "Connection Failed", "message": "...", "details": "..."}
+    """
     import httpx
     import json
 
     try:
+        # Validate input
+        if not bills:
+            error_msg = {
+                "error": "Validation Error",
+                "message": "Bill generation failed due to missing required fields.",
+                "details": "Bills list is empty. Please provide at least one bill record with tenant, period, and usage_details."
+            }
+            return json.dumps(error_msg, indent=2)
+        
+        if len(bills) > 4:
+            error_msg = {
+                "error": "Validation Error",
+                "message": "Too many bills provided. Maximum is 4 bills per request.",
+                "details": f"Provided {len(bills)} bills but maximum is 4."
+            }
+            return json.dumps(error_msg, indent=2)
+        
+        # Convert Pydantic models to dictionaries
+        bills_data = []
+        for bill in bills:
+            try:
+                if isinstance(bill, BillUsageRecord):
+                    bill_dict = bill.model_dump()
+                elif isinstance(bill, dict):
+                    bill_dict = bill
+                else:
+                    bill_dict = bill if isinstance(bill, dict) else bill.__dict__
+                
+                # Validate required fields
+                if 'tenant' not in bill_dict or not bill_dict['tenant']:
+                    raise ValueError("Missing required field: 'tenant'")
+                if 'period' not in bill_dict or not bill_dict['period']:
+                    raise ValueError("Missing required field: 'period'")
+                if 'usage_details' not in bill_dict or not bill_dict['usage_details']:
+                    raise ValueError("Missing required field: 'usage_details'")
+                
+                bills_data.append(bill_dict)
+            except ValueError as ve:
+                error_msg = {
+                    "error": "Validation Error",
+                    "message": "Bill generation failed due to missing required fields.",
+                    "details": f"Invalid bill record: {str(ve)}. Each bill must have: tenant, period, usage_details"
+                }
+                return json.dumps(error_msg, indent=2)
+        
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(f"{BASE_URL}/generate-bill", json={"bills": bills})
+            response = await client.post(f"{BASE_URL}/generate-bill", json={"bills": bills_data})
             response.raise_for_status()
             return json.dumps(response.json(), indent=2)
     except httpx.ConnectError as e:
@@ -78,10 +148,16 @@ async def get_usage_by_period(period: str) -> str:
     """Retrieve usage data for a specific billing period.
 
     Args:
-        period: Billing period identifier (e.g., "January 2026")
+        period: Billing period identifier (e.g., "January 2026", "2026-01")
 
     Returns:
-        JSON string containing list of usage records
+        JSON list of usage records, each with fields:
+        - account_name: Tenant/account name
+        - period: Billing period
+        - api_usage, api_over, api_est_dollars: API service metrics
+        - apa_usage, apa_over, apa_est_dollars: AP Automation metrics
+        - das_usage, das_over: DAS service metrics
+        Use these fields to construct bill usage_details when calling generate_bill.
     """
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{BASE_URL}/usage/period/{period}")
@@ -126,10 +202,16 @@ async def get_usage_by_account_name(account_name: str) -> str:
     """Retrieve usage data filtered by account name (partial match).
 
     Args:
-        account_name: Account name identifier
+        account_name: Account name identifier (supports partial matching)
 
     Returns:
-        JSON string containing list of usage records
+        JSON list of usage records for matching accounts, each with fields:
+        - account_name: Tenant/account name (use this as 'tenant' in generate_bill)
+        - period: Billing period (use this as 'period' in generate_bill)
+        - api_usage, api_over, api_est_dollars: API service metrics
+        - apa_usage, apa_over, apa_est_dollars: AP Automation metrics
+        - das_usage, das_over: DAS service metrics
+        Format these fields into a usage_details dict when calling generate_bill.
     """
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{BASE_URL}/usage/account/{account_name}")
