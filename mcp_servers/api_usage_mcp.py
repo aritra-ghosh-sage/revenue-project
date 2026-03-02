@@ -22,6 +22,57 @@ mcp = FastMCP("api-usage-server")
 BASE_URL = "http://localhost:8000"
 
 
+@mcp.tool(
+    name="generate_bill",
+    description="Generate up to 4 PDF bills for tenants and return file paths to the generated PDFs.",
+)
+async def generate_bill(bills: list) -> str:
+    """Generate up to 4 PDF bills for tenants. Returns file paths to the generated PDFs.\n\nArgs:\n    bills: List of up to 4 bill records, each a dict with keys:\n        - tenant (str): Tenant name\n        - period (str): Billing period (e.g., '2026-01')\n        - usage_details (dict): Usage details for the tenant (service names as keys, usage/amounts as values)\n\nReturns:\n    JSON string containing a list of file paths to the generated PDFs or error message\n\nExample:\n    generate_bill([\n        {"tenant": "AcmeCorp", "period": "2026-01", "usage_details": {"API Calls": 1200, "Storage (GB)": 50, "Overage": 10, "Estimated Dollars": 123.45}},\n        {"tenant": "BetaInc", "period": "2026-01", "usage_details": {"API Calls": 800, "Storage (GB)": 30, "Overage": 0, "Estimated Dollars": 99.99}}\n    ])\n    # Returns: ['bills/bill_AcmeCorp_xxxxxxxx.pdf', 'bills/bill_BetaInc_xxxxxxxx.pdf']"""
+    import httpx
+    import json
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(f"{BASE_URL}/generate-bill", json={"bills": bills})
+            response.raise_for_status()
+            return json.dumps(response.json(), indent=2)
+    except httpx.ConnectError as e:
+        error_msg = {
+            "error": "Connection Failed",
+            "message": "Unable to connect to the bill generation service. Please ensure the FastAPI server is running on port 8000.",
+            "details": str(e)
+        }
+        return json.dumps(error_msg, indent=2)
+    except httpx.TimeoutException as e:
+        error_msg = {
+            "error": "Request Timeout",
+            "message": "Bill generation request timed out. The server may be overloaded or unresponsive.",
+            "details": str(e)
+        }
+        return json.dumps(error_msg, indent=2)
+    except httpx.HTTPStatusError as e:
+        error_msg = {
+            "error": f"HTTP {e.response.status_code}",
+            "message": "Bill generation failed due to a server error.",
+            "details": e.response.text if e.response.text else str(e)
+        }
+        return json.dumps(error_msg, indent=2)
+    except json.JSONDecodeError as e:
+        error_msg = {
+            "error": "Invalid Response",
+            "message": "Received an invalid response from the bill generation service.",
+            "details": str(e)
+        }
+        return json.dumps(error_msg, indent=2)
+    except Exception as e:
+        error_msg = {
+            "error": "Unexpected Error",
+            "message": "An unexpected error occurred during bill generation.",
+            "details": f"{type(e).__name__}: {str(e)}"
+        }
+        return json.dumps(error_msg, indent=2)
+
+
 @mcp.tool()
 async def get_usage_by_period(period: str) -> str:
     """Retrieve usage data for a specific billing period.

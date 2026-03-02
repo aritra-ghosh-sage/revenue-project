@@ -1,11 +1,131 @@
 from dataclasses import asdict
 from decimal import Decimal
-
-from fastapi import FastAPI
-
 from api.models import UsageData
+from fastapi import FastAPI, BackgroundTasks
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
+import uuid
+import asyncio
 
 app = FastAPI()
+
+
+class BillUsageRecord(BaseModel):
+    tenant: str = Field(..., description="Tenant name")
+    period: str = Field(..., description="Billing period")
+    usage_details: Dict[str, Any] = Field(
+        ..., description="Usage details for the tenant"
+    )
+
+
+class BillRequest(BaseModel):
+    bills: List[BillUsageRecord]
+
+
+# Remove the HTML template and Jinja2 logic
+def _generate_pdf_reportlab(tenant: str, period: str, usage_details: dict, pdf_path: str):
+    """Generate a PDF bill using ReportLab.
+    
+    Raises:
+        OSError: If unable to write to the file path
+        Exception: For any reportlab-related errors
+    """
+    try:
+        c = canvas.Canvas(pdf_path, pagesize=letter)
+        width, height = letter
+        y = height - 40
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(40, y, "Sage Intacct - Usage Bill")
+        y -= 30
+        c.setFont("Helvetica", 12)
+        c.drawString(40, y, f"Billed Tenant: {tenant}")
+        y -= 20
+        c.drawString(40, y, f"Billing Period: {period}")
+        y -= 30
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(40, y, "Usage Details:")
+        y -= 20
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(60, y, "Service")
+        c.drawString(200, y, "Usage")
+        y -= 15
+        c.setFont("Helvetica", 11)
+        total_billed = 0.0
+        for key, value in usage_details.items():
+            c.drawString(60, y, str(key))
+            c.drawString(200, y, str(value))
+            # If the key is a dollar amount, add to total_billed
+            if isinstance(value, (int, float)) and ("dollar" in key.lower() or "$" in key or "amount" in key.lower()):
+                total_billed += float(value)
+            y -= 15
+            if y < 60:
+                c.showPage()
+                y = height - 40
+        # Draw total billed amount at the bottom
+        y -= 10
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(40, y, f"Total Billed Amount: ${total_billed:,.2f}")
+        c.save()
+    except OSError as e:
+        raise OSError(f"Unable to write PDF to {pdf_path}: {str(e)}")
+    except Exception as e:
+        raise Exception(f"PDF generation error: {str(e)}")
+
+async def _generate_pdf_async(tenant: str, period: str, usage_details: dict, pdf_path: str):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, lambda: _generate_pdf_reportlab(tenant, period, usage_details, pdf_path))
+
+
+@app.post(
+    "/generate-bill",
+    summary="Generate up to 4 PDF bills for tenants",
+    response_model=List[str],
+)
+async def generate_bill(
+    request: BillRequest, background_tasks: BackgroundTasks
+) -> List[str]:
+    """Generate up to 4 PDF bills for tenants. Returns file paths. Bills are not deleted after generation."""
+    from fastapi import HTTPException
+    
+    try:
+        bills = request.bills[:4]  # Enforce max 4 bills
+        pdf_paths = []
+        
+        # Ensure bills directory exists
+        try:
+            os.makedirs("bills", exist_ok=True)
+        except OSError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create bills directory: {str(e)}"
+            )
+        
+        # Generate each PDF
+        for bill in bills:
+            try:
+                filename = f"bills/bill_{bill.tenant}_{uuid.uuid4().hex[:8]}.pdf"
+                await _generate_pdf_async(bill.tenant, bill.period, bill.usage_details, filename)
+                pdf_paths.append(filename)
+            except Exception as e:
+                # If one bill fails, log it but continue with others
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to generate PDF for tenant {bill.tenant}: {str(e)}"
+                )
+        
+        return pdf_paths
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        # Catch any unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"Bill generation failed: {str(e)}"
+        )
 
 
 @app.get("/")

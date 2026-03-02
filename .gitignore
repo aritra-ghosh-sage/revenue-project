@@ -11,3 +11,11 @@ wheels/
 .env
 MCP_CLIENT_FIX_SUMMARY.md
 MCP_TEST_RESULTS.txt
+*.pdf
+sample_generate_bill_call.py
+test_metrics.py
+test_all_mcp_flows.py
+test_allocation_mcp_flow.py
+test_bill_generation_error.py
+test_bill_generation_mcp.py
+BILL_GENERATION_FIX.md
