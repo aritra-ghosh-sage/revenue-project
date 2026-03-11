@@ -1,21 +1,27 @@
 # Bill-Generation Verification
 
-This folder contains a small verification harness to run end-to-end bill generation, parse generated PDFs, and compare key fields against the request payload.
+Small harness to POST a `generate-bill` request, parse the produced PDFs, and compare key fields back to the request.
 
-Usage (local):
+Quick start:
 
-1. Install dependencies:
+1. Activate virtual environment and install verification deps:
 
-```bash
+```powershell
+& .venv\Scripts\Activate.ps1
 python -m pip install -r verification/requirements.txt
 ```
 
-2. Run a verification against a locally-running FastAPI server:
+2. Run the verification runner (FastAPI must be running):
 
-```bash
-python -m verification.runner --mode api --payload verification/tests/fixtures/sample_bill_request.json --out reports/run.json
+```powershell
+python -m verification.runner --mode api --payload verification/tests/fixtures/sample_bill_request.json --out verification/reports/run.json
 ```
 
-The runner will POST to `/generate-bill`, parse produced PDFs, and write a JSON report.
+Outputs:
 
-Verification is intended to be invoked via the MCP tool `verify_bills` (LLM or MCP client flows).
+- Generated PDFs are saved under `bills/` by the FastAPI endpoint
+- The runner writes a JSON report under `verification/reports/`
+
+Tip: The verification runner is called by MCP tool flows in tests; run it directly for focused PDF validation.
+
+Updated: 2026-03-11
