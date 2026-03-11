@@ -1,0 +1,55 @@
+{
+  "run_id": 1773249594,
+  "mode": "mcp",
+  "server_script": "mcp_servers/api_usage_mcp.py",
+  "results": [
+    {
+      "pdf": "bills/bill_ACME_76300859.pdf",
+      "bill": {
+        "tenant": "ACME",
+        "period": "January 2026",
+        "usage_details": {
+          "ServiceA": 100,
+          "Amount": 200.0
+        }
+      },
+      "parsed": {
+        "tenant": "ACME",
+        "period": "January 2026",
+        "items": [
+          {
+            "service": "Service",
+            "value": null,
+            "raw": "Service Usage"
+          },
+          {
+            "service": "ServiceA",
+            "value": 100.0,
+            "raw": "ServiceA 100"
+          },
+          {
+            "service": "Amount",
+            "value": 200.0,
+            "raw": "Amount 200.0"
+          }
+        ],
+        "total": 200.0
+      },
+      "diff": {
+        "expected_total": 200.0,
+        "parsed_total": 200.0,
+        "delta": 0.0,
+        "passed": true,
+        "tenant_match": true,
+        "period_match": true
+      },
+      "usage_diff": {
+        "expected_total": 0.0,
+        "parsed_total": 200.0,
+        "delta": 200.0,
+        "passed": false,
+        "matched_rows": 0
+      }
+    }
+  ]
+}

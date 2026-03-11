@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mcp_clients.api_usage_mcp_client import MCPClient
 
 
-async def test_query(query: str, test_name: str):
+async def run_query(query: str, test_name: str):
     """Test a single query."""
     print("\n" + "=" * 70)
     print(f"TEST: {test_name}")
@@ -44,7 +44,7 @@ async def main():
     ]
     
     for query, test_name in tests:
-        await test_query(query, test_name)
+        await run_query(query, test_name)
         await asyncio.sleep(2)  # Brief delay between tests
     
     print("\n" + "=" * 70)

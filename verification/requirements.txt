@@ -1,0 +1,6 @@
+httpx
+pdfplumber
+PyPDF2
+pandas
+pytest
+reportlab

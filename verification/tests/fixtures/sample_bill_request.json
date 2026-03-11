@@ -1,0 +1,12 @@
+{
+  "bills": [
+    {
+      "tenant": "ACME",
+      "period": "January 2026",
+      "usage_details": {
+        "ServiceA": 100,
+        "Amount": 200.0
+      }
+    }
+  ]
+}

@@ -27,11 +27,16 @@ BASE_URL = "http://localhost:8000"
 
 class BillUsageRecord(BaseModel):
     """A single bill record with tenant name, billing period, and usage details."""
-    tenant: str = Field(..., description="Tenant or account name (e.g., 'Baker Tilly Advisory Group')")
-    period: str = Field(..., description="Billing period (e.g., '2026-01' or 'January 2026')")
+
+    tenant: str = Field(
+        ..., description="Tenant or account name (e.g., 'Baker Tilly Advisory Group')"
+    )
+    period: str = Field(
+        ..., description="Billing period (e.g., '2026-01' or 'January 2026')"
+    )
     usage_details: Dict[str, Any] = Field(
-        ..., 
-        description="Usage details as key-value pairs. Example: {'API Calls': 1200, 'Storage (GB)': 50, 'Estimated Dollars': 123.45}"
+        ...,
+        description="Usage details as key-value pairs. Example: {'API Calls': 1200, 'Storage (GB)': 50, 'Estimated Dollars': 123.45}",
     )
 
 
@@ -41,20 +46,21 @@ class BillUsageRecord(BaseModel):
 )
 async def generate_bill(bills: List[BillUsageRecord]) -> str:
     """Generate up to 4 PDF bills for tenants. Returns file paths to the generated PDFs.
-    
+
     Args:
         bills: List of up to 4 bill records, each with:
             - tenant (str): Tenant or account name
             - period (str): Billing period (e.g., '2026-01' or 'January 2026')
             - usage_details (dict): Usage metrics with keys like 'API Calls', 'Storage (GB)', 'Estimated Dollars', etc.
-    
+
     Returns:
         JSON string containing a list of file paths to the generated PDF bills or error message.
         Success example: ['bills/bill_Baker_Tilly_Advisory_Group_xxxxxxxx.pdf']
         Error example: {"error": "Connection Failed", "message": "...", "details": "..."}
     """
-    import httpx
     import json
+
+    import httpx
 
     try:
         # Validate input
@@ -62,18 +68,18 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             error_msg = {
                 "error": "Validation Error",
                 "message": "Bill generation failed due to missing required fields.",
-                "details": "Bills list is empty. Please provide at least one bill record with tenant, period, and usage_details."
+                "details": "Bills list is empty. Please provide at least one bill record with tenant, period, and usage_details.",
             }
             return json.dumps(error_msg, indent=2)
-        
+
         if len(bills) > 4:
             error_msg = {
                 "error": "Validation Error",
                 "message": "Too many bills provided. Maximum is 4 bills per request.",
-                "details": f"Provided {len(bills)} bills but maximum is 4."
+                "details": f"Provided {len(bills)} bills but maximum is 4.",
             }
             return json.dumps(error_msg, indent=2)
-        
+
         # Convert Pydantic models to dictionaries
         bills_data = []
         for bill in bills:
@@ -84,61 +90,63 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
                     bill_dict = bill
                 else:
                     bill_dict = bill if isinstance(bill, dict) else bill.__dict__
-                
+
                 # Validate required fields
-                if 'tenant' not in bill_dict or not bill_dict['tenant']:
+                if "tenant" not in bill_dict or not bill_dict["tenant"]:
                     raise ValueError("Missing required field: 'tenant'")
-                if 'period' not in bill_dict or not bill_dict['period']:
+                if "period" not in bill_dict or not bill_dict["period"]:
                     raise ValueError("Missing required field: 'period'")
-                if 'usage_details' not in bill_dict or not bill_dict['usage_details']:
+                if "usage_details" not in bill_dict or not bill_dict["usage_details"]:
                     raise ValueError("Missing required field: 'usage_details'")
-                
+
                 bills_data.append(bill_dict)
             except ValueError as ve:
                 error_msg = {
                     "error": "Validation Error",
                     "message": "Bill generation failed due to missing required fields.",
-                    "details": f"Invalid bill record: {str(ve)}. Each bill must have: tenant, period, usage_details"
+                    "details": f"Invalid bill record: {str(ve)}. Each bill must have: tenant, period, usage_details",
                 }
                 return json.dumps(error_msg, indent=2)
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(f"{BASE_URL}/generate-bill", json={"bills": bills_data})
+            response = await client.post(
+                f"{BASE_URL}/generate-bill", json={"bills": bills_data}
+            )
             response.raise_for_status()
             return json.dumps(response.json(), indent=2)
     except httpx.ConnectError as e:
         error_msg = {
             "error": "Connection Failed",
             "message": "Unable to connect to the bill generation service. Please ensure the FastAPI server is running on port 8000.",
-            "details": str(e)
+            "details": str(e),
         }
         return json.dumps(error_msg, indent=2)
     except httpx.TimeoutException as e:
         error_msg = {
             "error": "Request Timeout",
             "message": "Bill generation request timed out. The server may be overloaded or unresponsive.",
-            "details": str(e)
+            "details": str(e),
         }
         return json.dumps(error_msg, indent=2)
     except httpx.HTTPStatusError as e:
         error_msg = {
             "error": f"HTTP {e.response.status_code}",
             "message": "Bill generation failed due to a server error.",
-            "details": e.response.text if e.response.text else str(e)
+            "details": e.response.text if e.response.text else str(e),
         }
         return json.dumps(error_msg, indent=2)
     except json.JSONDecodeError as e:
         error_msg = {
             "error": "Invalid Response",
             "message": "Received an invalid response from the bill generation service.",
-            "details": str(e)
+            "details": str(e),
         }
         return json.dumps(error_msg, indent=2)
     except Exception as e:
         error_msg = {
             "error": "Unexpected Error",
             "message": "An unexpected error occurred during bill generation.",
-            "details": f"{type(e).__name__}: {str(e)}"
+            "details": f"{type(e).__name__}: {str(e)}",
         }
         return json.dumps(error_msg, indent=2)
 
@@ -447,6 +455,41 @@ async def get_usage_by_das_over(das_over: str) -> str:
         response = await client.get(f"{BASE_URL}/usage/das-over/{das_over}")
         response.raise_for_status()
         return json.dumps(response.json(), indent=2)
+
+
+@mcp.tool(
+    name="verify_bills",
+    description="Run bill-generation verification for provided bills and return a JSON report.",
+)
+async def verify_bills(bills: List[BillUsageRecord]) -> str:
+    """Run the verification harness against the provided bills.
+
+    This tool invokes the in-repo verification runner directly (no subprocess)
+    and returns the redacted JSON report as a string.
+    """
+    try:
+        # Convert to plain dict payload
+        if isinstance(bills, list):
+            bills_data = []
+            for b in bills:
+                if isinstance(b, BillUsageRecord):
+                    bills_data.append(b.model_dump())
+                else:
+                    bills_data.append(b if isinstance(b, dict) else dict(b))
+        else:
+            return json.dumps(
+                {"error": "Invalid input", "message": "bills must be a list"}
+            )
+
+        payload = {"bills": bills_data}
+
+        # Import the private runner entrypoint and call it
+        from verification.runner import _run_verification_payload
+
+        report = _run_verification_payload(payload, api_url=BASE_URL)
+        return json.dumps(report, indent=2)
+    except Exception as e:
+        return json.dumps({"error": "Unexpected Error", "message": str(e)})
 
 
 async def main():
