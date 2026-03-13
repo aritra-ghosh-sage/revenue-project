@@ -151,7 +151,10 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
         return json.dumps(error_msg, indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_period",
+    description="Retrieve usage data for a specific billing period.",
+)
 async def get_usage_by_period(period: str) -> str:
     """Retrieve usage data for a specific billing period.
 
@@ -173,7 +176,10 @@ async def get_usage_by_period(period: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_contract",
+    description="Retrieve usage data filtered by contract ID.",
+)
 async def get_usage_by_contract(contract_id: str) -> str:
     """Retrieve usage data filtered by contract ID.
 
@@ -189,7 +195,10 @@ async def get_usage_by_contract(contract_id: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_company",
+    description="Retrieve usage data filtered by company/order ID.",
+)
 async def get_usage_by_company(company_id: str) -> str:
     """Retrieve usage data filtered by company/order ID.
 
@@ -205,7 +214,10 @@ async def get_usage_by_company(company_id: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_account_name",
+    description="Retrieve usage data filtered by account name (partial match).",
+)
 async def get_usage_by_account_name(account_name: str) -> str:
     """Retrieve usage data filtered by account name (partial match).
 
@@ -227,7 +239,10 @@ async def get_usage_by_account_name(account_name: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_account_owner",
+    description="Retrieve usage data filtered by account owner (partial match).",
+)
 async def get_usage_by_account_owner(account_owner: str) -> str:
     """Retrieve usage data filtered by account owner (partial match).
 
@@ -243,7 +258,10 @@ async def get_usage_by_account_owner(account_owner: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_channel",
+    description="Retrieve usage data filtered by sales channel.",
+)
 async def get_usage_by_channel(channel: str) -> str:
     """Retrieve usage data filtered by sales channel.
 
@@ -259,7 +277,10 @@ async def get_usage_by_channel(channel: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_partner",
+    description="Retrieve usage data filtered by partner name.",
+)
 async def get_usage_by_partner(partner: str) -> str:
     """Retrieve usage data filtered by partner name.
 
@@ -275,7 +296,10 @@ async def get_usage_by_partner(partner: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_total_usage",
+    description="Retrieve usage data filtered by total usage (>= comparison).",
+)
 async def get_usage_by_total_usage(usage: str) -> str:
     """Retrieve usage data filtered by total usage (>= comparison).
 
@@ -291,7 +315,10 @@ async def get_usage_by_total_usage(usage: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_over_usage",
+    description="Retrieve usage data filtered by total overage usage (>= comparison).",
+)
 async def get_usage_by_over_usage(over_usage: str) -> str:
     """Retrieve usage data filtered by total overage usage (>= comparison).
 
@@ -307,7 +334,10 @@ async def get_usage_by_over_usage(over_usage: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_estimated_dollars",
+    description="Retrieve usage data filtered by total estimated revenue (>= comparison).",
+)
 async def get_usage_by_estimated_dollars(estimated_dollars: str) -> str:
     """Retrieve usage data filtered by total estimated revenue (>= comparison).
 
@@ -325,7 +355,10 @@ async def get_usage_by_estimated_dollars(estimated_dollars: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_api_usage",
+    description="Retrieve usage data filtered by API usage (>= comparison).",
+)
 async def get_usage_by_api_usage(api_usage: str) -> str:
     """Retrieve usage data filtered by API usage (>= comparison).
 
@@ -341,7 +374,10 @@ async def get_usage_by_api_usage(api_usage: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_api_over",
+    description="Retrieve usage data filtered by API overage (>= comparison).",
+)
 async def get_usage_by_api_over(api_over: str) -> str:
     """Retrieve usage data filtered by API overage (>= comparison).
 
@@ -357,7 +393,10 @@ async def get_usage_by_api_over(api_over: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_api_estimated_dollars",
+    description="Retrieve usage data filtered by API estimated dollars (>= comparison).",
+)
 async def get_usage_by_api_estimated_dollars(api_est_dollars: str) -> str:
     """Retrieve usage data filtered by API estimated dollars (>= comparison).
 
@@ -375,7 +414,10 @@ async def get_usage_by_api_estimated_dollars(api_est_dollars: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_apa_usage",
+    description="Retrieve usage data filtered by AP Automation usage (>= comparison).",
+)
 async def get_usage_by_apa_usage(apa_usage: str) -> str:
     """Retrieve usage data filtered by AP Automation usage (>= comparison).
 
@@ -391,7 +433,10 @@ async def get_usage_by_apa_usage(apa_usage: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_apa_over",
+    description="Retrieve usage data filtered by AP Automation overage (>= comparison).",
+)
 async def get_usage_by_apa_over(apa_over: str) -> str:
     """Retrieve usage data filtered by AP Automation overage (>= comparison).
 
@@ -407,7 +452,10 @@ async def get_usage_by_apa_over(apa_over: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_apa_estimated_dollars",
+    description="Retrieve usage data filtered by AP Automation estimated dollars (>= comparison).",
+)
 async def get_usage_by_apa_estimated_dollars(apa_est_dollars: str) -> str:
     """Retrieve usage data filtered by AP Automation estimated dollars (>= comparison).
 
@@ -425,7 +473,10 @@ async def get_usage_by_apa_estimated_dollars(apa_est_dollars: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_das_usage",
+    description="Retrieve usage data filtered by DAS usage (>= comparison).",
+)
 async def get_usage_by_das_usage(das_usage: str) -> str:
     """Retrieve usage data filtered by DAS usage (>= comparison).
 
@@ -441,7 +492,10 @@ async def get_usage_by_das_usage(das_usage: str) -> str:
         return json.dumps(response.json(), indent=2)
 
 
-@mcp.tool()
+@mcp.tool(
+    name="get_usage_by_das_over",
+    description="Retrieve usage data filtered by DAS overage (>= comparison).",
+)
 async def get_usage_by_das_over(das_over: str) -> str:
     """Retrieve usage data filtered by DAS overage (>= comparison).
 
@@ -461,6 +515,7 @@ async def get_usage_by_das_over(das_over: str) -> str:
     name="verify_bills",
     description="Run bill-generation verification for provided bills and return a JSON report.",
 )
+
 async def verify_bills(bills: List[BillUsageRecord]) -> str:
     """Run the verification harness against the provided bills.
 
