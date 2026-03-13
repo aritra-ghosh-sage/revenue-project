@@ -1,0 +1,22 @@
+{
+  "bills": [
+    {
+      "tenant": "AcmeCorp",
+      "period": "2026-01",
+      "usage_details": {
+        "API Calls": 1200,
+        "Storage (GB)": 50,
+        "Amount": 150.00
+      }
+    },
+    {
+      "tenant": "BetaInc",
+      "period": "2026-01",
+      "usage_details": {
+        "API Calls": 800,
+        "Storage (GB)": 30,
+        "Amount": 90.00
+      }
+    }
+  ]
+}

@@ -53,13 +53,39 @@ def _generate_pdf_reportlab(tenant: str, period: str, usage_details: dict, pdf_p
         c.drawString(200, y, "Usage")
         y -= 15
         c.setFont("Helvetica", 11)
-        total_billed = 0.0
+        total_billed = Decimal("0")
         for key, value in usage_details.items():
             c.drawString(60, y, str(key))
             c.drawString(200, y, str(value))
-            # If the key is a dollar amount, add to total_billed
-            if isinstance(value, (int, float)) and ("dollar" in key.lower() or "$" in key or "amount" in key.lower()):
-                total_billed += float(value)
+
+            # Attempt to parse numeric values from several possible types
+            numeric_value = None
+            try:
+                if isinstance(value, Decimal):
+                    numeric_value = value
+                elif isinstance(value, (int, float)):
+                    numeric_value = Decimal(str(value))
+                elif isinstance(value, str):
+                    # strip common currency formatting
+                    text = value.strip().replace("$", "").replace(",", "")
+                    if text:
+                        try:
+                            numeric_value = Decimal(text)
+                        except Exception:
+                            numeric_value = None
+            except Exception:
+                numeric_value = None
+
+            # If the key looks like an estimated dollar/amount field, add it
+            key_lower = str(key).lower()
+            if numeric_value is not None and (
+                "dollar" in key_lower or "amount" in key_lower or "est" in key_lower
+            ):
+                try:
+                    total_billed += numeric_value
+                except Exception:
+                    pass
+
             y -= 15
             if y < 60:
                 c.showPage()
@@ -140,6 +166,7 @@ def _serialize_usage(row: UsageData) -> dict:
         if isinstance(value, Decimal):
             payload[key] = str(value)
     return payload
+
 
 
 @app.get("/usage/period/{period}")

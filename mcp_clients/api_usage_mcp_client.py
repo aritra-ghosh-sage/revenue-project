@@ -127,7 +127,7 @@ class MCPClient:
                     messages=messages, # pyright: ignore[reportArgumentType]
                     temperature=0.3,
                     top_p=0.1,
-                    max_tokens=4096,
+                    max_tokens=12000,
                     model=self.model,
                     tools=formatted_tools
                 )

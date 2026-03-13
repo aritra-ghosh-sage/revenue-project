@@ -1,0 +1,115 @@
+{
+  "run_id": 1773375681,
+  "mode": "mcp",
+  "server_script": "mcp_servers/api_usage_mcp.py",
+  "results": [
+    {
+      "pdf": "bills/bill_AcmeCorp_b5b9f341.pdf",
+      "bill": {
+        "tenant": "AcmeCorp",
+        "period": "2026-01",
+        "usage_details": {
+          "API Calls": 1200,
+          "Storage (GB)": 50,
+          "Amount": 150.0
+        }
+      },
+      "parsed": {
+        "tenant": "AcmeCorp",
+        "period": "2026-01",
+        "items": [
+          {
+            "service": "Service",
+            "value": null,
+            "raw": "Service Usage"
+          },
+          {
+            "service": "API Calls",
+            "value": 1200.0,
+            "raw": "API Calls 1200"
+          },
+          {
+            "service": "Storage (GB)",
+            "value": 50.0,
+            "raw": "Storage (GB) 50"
+          },
+          {
+            "service": "Amount",
+            "value": 150.0,
+            "raw": "Amount 150.0"
+          }
+        ],
+        "total": 150.0
+      },
+      "diff": {
+        "expected_total": 150.0,
+        "parsed_total": 150.0,
+        "delta": 0.0,
+        "passed": true,
+        "tenant_match": true,
+        "period_match": true
+      },
+      "usage_diff": {
+        "expected_total": 0.0,
+        "parsed_total": 150.0,
+        "delta": 150.0,
+        "passed": false,
+        "matched_rows": 0
+      }
+    },
+    {
+      "pdf": "bills/bill_BetaInc_fa79fd74.pdf",
+      "bill": {
+        "tenant": "BetaInc",
+        "period": "2026-01",
+        "usage_details": {
+          "API Calls": 800,
+          "Storage (GB)": 30,
+          "Amount": 90.0
+        }
+      },
+      "parsed": {
+        "tenant": "BetaInc",
+        "period": "2026-01",
+        "items": [
+          {
+            "service": "Service",
+            "value": null,
+            "raw": "Service Usage"
+          },
+          {
+            "service": "API Calls",
+            "value": 800.0,
+            "raw": "API Calls 800"
+          },
+          {
+            "service": "Storage (GB)",
+            "value": 30.0,
+            "raw": "Storage (GB) 30"
+          },
+          {
+            "service": "Amount",
+            "value": 90.0,
+            "raw": "Amount 90.0"
+          }
+        ],
+        "total": 90.0
+      },
+      "diff": {
+        "expected_total": 90.0,
+        "parsed_total": 90.0,
+        "delta": 0.0,
+        "passed": true,
+        "tenant_match": true,
+        "period_match": true
+      },
+      "usage_diff": {
+        "expected_total": 0.0,
+        "parsed_total": 90.0,
+        "delta": 90.0,
+        "passed": false,
+        "matched_rows": 0
+      }
+    }
+  ]
+}
