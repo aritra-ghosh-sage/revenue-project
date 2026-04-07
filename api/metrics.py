@@ -6,9 +6,14 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import logging
 import os
+import sys
 import uuid
 import asyncio
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler(sys.stderr))
 
 app = FastAPI(title="Usage Billing API", description="API for retrieving usage data and generating PDF bills for Sage Intacct usage.", version="1.0.0")
 
@@ -133,10 +138,8 @@ async def generate_bill(request: BillRequest) -> List[str]:
                 pdf_paths.append(filename)
             except Exception as e:
                 # If one bill fails, log it but continue with others
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Failed to generate PDF for tenant {bill.tenant}: {str(e)}"
-                )
+                logger.warning(f"Failed to generate PDF for tenant {bill.tenant}: {str(e)}")
+                continue
         
         return pdf_paths
     except HTTPException:
