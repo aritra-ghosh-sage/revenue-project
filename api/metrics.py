@@ -10,7 +10,7 @@ import os
 import uuid
 import asyncio
 
-app = FastAPI()
+app = FastAPI(title="Usage Billing API", description="API for retrieving usage data and generating PDF bills for Sage Intacct usage.", version="1.0.0")
 
 
 class BillUsageRecord(BaseModel):
@@ -148,16 +148,6 @@ async def generate_bill(request: BillRequest) -> List[str]:
             status_code=500,
             detail=f"Bill generation failed: {str(e)}"
         )
-
-
-@app.get("/")
-async def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
 
 
 def _serialize_usage(row: UsageData) -> dict:
