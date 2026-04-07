@@ -13,7 +13,8 @@ import uuid
 import asyncio
 
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler(sys.stderr))
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 app = FastAPI(title="Usage Billing API", description="API for retrieving usage data and generating PDF bills for Sage Intacct usage.", version="1.0.0")
 
@@ -101,8 +102,18 @@ def _generate_pdf_reportlab(tenant: str, period: str, usage_details: dict, pdf_p
         c.drawString(40, y, f"Total Billed Amount: ${total_billed:,.2f}")
         c.save()
     except OSError as e:
+        logger.error(
+            "PDF write failed due to OS error",
+            extra={"pdf_path": pdf_path, "error": str(e)},
+            exc_info=True,
+        )
         raise OSError(f"Unable to write PDF to {pdf_path}: {str(e)}")
     except Exception as e:
+        logger.error(
+            "PDF generation failed unexpectedly",
+            extra={"pdf_path": pdf_path, "tenant": tenant, "period": period, "error": str(e)},
+            exc_info=True,
+        )
         raise Exception(f"PDF generation error: {str(e)}")
 
 async def _generate_pdf_async(tenant: str, period: str, usage_details: dict, pdf_path: str):
@@ -125,6 +136,11 @@ async def generate_bill(request: BillRequest) -> List[str]:
         try:
             os.makedirs("bills", exist_ok=True)
         except OSError as e:
+            logger.error(
+                "Failed to create bills directory",
+                extra={"error": str(e)},
+                exc_info=True,
+            )
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to create bills directory: {str(e)}"
@@ -136,9 +152,17 @@ async def generate_bill(request: BillRequest) -> List[str]:
                 filename = f"bills/bill_{bill.tenant}_{uuid.uuid4().hex[:8]}.pdf"
                 await _generate_pdf_async(bill.tenant, bill.period, bill.usage_details, filename)
                 pdf_paths.append(filename)
+                logger.info(
+                    "PDF generated successfully",
+                    extra={"tenant": bill.tenant, "period": bill.period, "filename": filename},
+                )
             except Exception as e:
                 # If one bill fails, log it but continue with others
-                logger.warning(f"Failed to generate PDF for tenant {bill.tenant}: {str(e)}")
+                logger.warning(
+                    "Failed to generate PDF for tenant, skipping",
+                    extra={"tenant": bill.tenant, "period": bill.period, "error": str(e)},
+                    exc_info=True,
+                )
                 continue
         
         return pdf_paths
@@ -147,6 +171,11 @@ async def generate_bill(request: BillRequest) -> List[str]:
         raise
     except Exception as e:
         # Catch any unexpected errors
+        logger.error(
+            "Unexpected error during bill generation",
+            extra={"error": str(e)},
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=500,
             detail=f"Bill generation failed: {str(e)}"
@@ -172,7 +201,11 @@ async def get_usage_by_period(period: str) -> list[dict]:
     Returns:
         List of usage records matching the specified period
     """
-    return [_serialize_usage(row) for row in UsageData.get_billing_by_period(period)]
+    try:
+        return [_serialize_usage(row) for row in UsageData.get_billing_by_period(period)]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by period", extra={"period": period, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/channel/{channel}")
@@ -185,7 +218,11 @@ async def get_usage_by_channel(channel: str) -> list[dict]:
     Returns:
         List of usage records matching the specified channel
     """
-    return [_serialize_usage(row) for row in UsageData.get_billing_by_channel(channel)]
+    try:
+        return [_serialize_usage(row) for row in UsageData.get_billing_by_channel(channel)]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by channel", extra={"channel": channel, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/partner/{partner}")
@@ -198,7 +235,11 @@ async def get_usage_by_partner(partner: str) -> list[dict]:
     Returns:
         List of usage records for the specified partner
     """
-    return [_serialize_usage(row) for row in UsageData.get_billing_by_partner(partner)]
+    try:
+        return [_serialize_usage(row) for row in UsageData.get_billing_by_partner(partner)]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by partner", extra={"partner": partner, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/over-usage/{over_usage}")
@@ -211,9 +252,13 @@ async def get_usage_by_over_usage(over_usage: str) -> list[dict]:
     Returns:
         List of usage records with total overage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_over_usage(over_usage)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_over_usage(over_usage)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by over-usage", extra={"over_usage": over_usage, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/account/{account_name}")
@@ -226,10 +271,14 @@ async def get_usage_by_account_name(account_name: str) -> list[dict]:
     Returns:
         List of usage records for accounts matching the specified name
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_account_name(account_name)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_account_name(account_name)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by account name", extra={"account_name": account_name, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/contract/{contract_id}")
@@ -242,10 +291,14 @@ async def get_usage_by_contract(contract_id: str) -> list[dict]:
     Returns:
         List of usage records for the specified contract
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_contract_id(contract_id)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_contract_id(contract_id)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by contract", extra={"contract_id": contract_id, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/company/{company_id}")
@@ -258,9 +311,13 @@ async def get_usage_by_company(company_id: str) -> list[dict]:
     Returns:
         List of usage records for the specified company
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_order_id(company_id)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_order_id(company_id)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by company", extra={"company_id": company_id, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/estimated-dollars/{estimated_dollars}")
@@ -273,10 +330,14 @@ async def get_usage_by_estimated_dollars(estimated_dollars: str) -> list[dict]:
     Returns:
         List of usage records with total estimated dollars >= specified value
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_estimated_dollars(estimated_dollars)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_estimated_dollars(estimated_dollars)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by estimated dollars", extra={"estimated_dollars": estimated_dollars, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/account-owner/{account_owner}")
@@ -289,10 +350,14 @@ async def get_usage_by_account_owner(account_owner: str) -> list[dict]:
     Returns:
         List of usage records for the specified account owner
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_account_owner(account_owner)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_account_owner(account_owner)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by account owner", extra={"account_owner": account_owner, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/total-usage/{total_usage}")
@@ -305,9 +370,13 @@ async def get_usage_by_total_usage(total_usage: str) -> list[dict]:
     Returns:
         List of usage records with total usage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_usage(total_usage)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_usage(total_usage)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by total usage", extra={"total_usage": total_usage, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/api-usage/{api_usage}")
@@ -320,9 +389,13 @@ async def get_usage_by_api_usage(api_usage: str) -> list[dict]:
     Returns:
         List of usage records with API usage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_api_usage(api_usage)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_api_usage(api_usage)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by API usage", extra={"api_usage": api_usage, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/api-over/{api_over}")
@@ -335,9 +408,13 @@ async def get_usage_by_api_over(api_over: str) -> list[dict]:
     Returns:
         List of usage records with API overage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_api_over(api_over)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_api_over(api_over)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by API overage", extra={"api_over": api_over, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/api-estimated-dollars/{api_est_dollars}")
@@ -350,10 +427,14 @@ async def get_usage_by_api_estimated_dollars(api_est_dollars: str) -> list[dict]
     Returns:
         List of usage records with API estimated dollars >= specified value
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_api_est_dollars(api_est_dollars)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_api_est_dollars(api_est_dollars)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by API estimated dollars", extra={"api_est_dollars": api_est_dollars, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/apa-usage/{apa_usage}")
@@ -366,9 +447,13 @@ async def get_usage_by_apa_usage(apa_usage: str) -> list[dict]:
     Returns:
         List of usage records with AP Automation usage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_apa_usage(apa_usage)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_apa_usage(apa_usage)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by APA usage", extra={"apa_usage": apa_usage, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/apa-over/{apa_over}")
@@ -381,9 +466,13 @@ async def get_usage_by_apa_over(apa_over: str) -> list[dict]:
     Returns:
         List of usage records with AP Automation overage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_apa_over(apa_over)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_apa_over(apa_over)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by APA overage", extra={"apa_over": apa_over, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/apa-estimated-dollars/{apa_est_dollars}")
@@ -396,10 +485,14 @@ async def get_usage_by_apa_estimated_dollars(apa_est_dollars: str) -> list[dict]
     Returns:
         List of usage records with AP Automation estimated dollars >= specified value
     """
-    return [
-        _serialize_usage(row)
-        for row in UsageData.get_billing_by_apa_est_dollars(apa_est_dollars)
-    ]
+    try:
+        return [
+            _serialize_usage(row)
+            for row in UsageData.get_billing_by_apa_est_dollars(apa_est_dollars)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by APA estimated dollars", extra={"apa_est_dollars": apa_est_dollars, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/das-usage/{das_usage}")
@@ -412,9 +505,13 @@ async def get_usage_by_das_usage(das_usage: str) -> list[dict]:
     Returns:
         List of usage records with DAS usage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_das_usage(das_usage)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_das_usage(das_usage)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by DAS usage", extra={"das_usage": das_usage, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
 
 
 @app.get("/usage/das-over/{das_over}")
@@ -427,6 +524,10 @@ async def get_usage_by_das_over(das_over: str) -> list[dict]:
     Returns:
         List of usage records with DAS overage >= specified value
     """
-    return [
-        _serialize_usage(row) for row in UsageData.get_billing_by_das_over(das_over)
-    ]
+    try:
+        return [
+            _serialize_usage(row) for row in UsageData.get_billing_by_das_over(das_over)
+        ]
+    except Exception as e:
+        logger.error("Failed to retrieve usage by DAS overage", extra={"das_over": das_over, "error": str(e)}, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve usage data: {str(e)}")
