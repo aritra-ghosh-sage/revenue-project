@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import httpx
-from mcp.server import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 
 # Initialize the FastMCP server
 mcp = FastMCP("api-usage-server")
@@ -44,7 +44,7 @@ class BillUsageRecord(BaseModel):
     name="generate_bill",
     description="Generate up to 4 PDF bills for tenants and return file paths to the generated PDFs.",
 )
-async def generate_bill(bills: List[BillUsageRecord]) -> str:
+async def generate_bill(bills: List[BillUsageRecord], ctx: Context) -> str:
     """Generate up to 4 PDF bills for tenants. Returns file paths to the generated PDFs.
 
     Args:
@@ -104,8 +104,14 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
                 error_msg = {
                     "error": "Validation Error",
                     "message": "Bill generation failed due to missing required fields.",
-                    "details": f"Invalid bill record: {str(ve)}. Each bill must have: tenant, period, usage_details",
+                    "extra": {
+                        "details": f"Invalid bill record: {str(ve)}. Each bill must have: tenant, period, usage_details",
+                        "tenant": bill.tenant if hasattr(bill, "tenant") else "N/A",
+                        "period": bill.period if hasattr(bill, "period") else "N/A",
+                        "usage_details": bill.usage_details if hasattr(bill, "usage_details") else "N/A",
+                    }
                 }
+                await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg["extra"])
                 return json.dumps(error_msg, indent=2)
 
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -120,6 +126,7 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             "message": "Unable to connect to the bill generation service. Please ensure the FastAPI server is running on port 8000.",
             "details": str(e),
         }
+        await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg['details'])
         return json.dumps(error_msg, indent=2)
     except httpx.TimeoutException as e:
         error_msg = {
@@ -127,6 +134,7 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             "message": "Bill generation request timed out. The server may be overloaded or unresponsive.",
             "details": str(e),
         }
+        await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg['details'])
         return json.dumps(error_msg, indent=2)
     except httpx.HTTPStatusError as e:
         error_msg = {
@@ -134,6 +142,7 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             "message": "Bill generation failed due to a server error.",
             "details": e.response.text if e.response.text else str(e),
         }
+        await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg['details'])
         return json.dumps(error_msg, indent=2)
     except json.JSONDecodeError as e:
         error_msg = {
@@ -141,6 +150,7 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             "message": "Received an invalid response from the bill generation service.",
             "details": str(e),
         }
+        await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg['details'])
         return json.dumps(error_msg, indent=2)
     except Exception as e:
         error_msg = {
@@ -148,6 +158,7 @@ async def generate_bill(bills: List[BillUsageRecord]) -> str:
             "message": "An unexpected error occurred during bill generation.",
             "details": f"{type(e).__name__}: {str(e)}",
         }
+        await ctx.error(f"{error_msg['error']}: {error_msg['message']}", extra=error_msg['details'])
         return json.dumps(error_msg, indent=2)
 
 
